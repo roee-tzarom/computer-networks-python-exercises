@@ -1,5 +1,6 @@
-message:my_data.txt
+message:"my_data.txt"
 maximum_msg_size:100
 window_size:5
 timeout:3
 dynamic message size:False
+drop_prob:0.3

@@ -50,6 +50,7 @@ def start_client():
                     if val >= base:
                         base = val + 1
         except socket.timeout:
+            print(f"[DEBUG] Timeout! Base: {base}, Waiting for ACKs...")
             next_seq = base
 
     client_socket.close()
