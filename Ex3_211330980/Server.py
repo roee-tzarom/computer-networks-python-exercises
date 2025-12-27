@@ -1,7 +1,6 @@
 import socket
 
 
-# --- Function to read configuration ---
 def read_config(filename):
     config = {}
     try:
@@ -16,48 +15,60 @@ def read_config(filename):
 
 
 def start_server():
-    # Load configuration
     config = read_config('input.txt')
-    server_port = 12345
+    max_msg_size = int(config.get('maximum_msg_size', '100'))
 
-    # Create TCP Socket
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(('127.0.0.1', server_port))
+    server_socket.bind(('127.0.0.1', 12345))
     server_socket.listen(1)
 
-    print(f"[SERVER] Listening on port {server_port}...")
+    print(f"[SERVER] Listening...")
 
     while True:
         conn, addr = server_socket.accept()
-        print(f"[SERVER] Connected to {addr}")
+        expected_seq = 0
+        buffer = ""
 
-        # --- HANDSHAKE START ---
         try:
-            # 1. Wait for 'SIN'
-            data = conn.recv(1024).decode()
-            if data == "SIN":
-                print("[SERVER] Received SIN. Sending SIN/ACK...")
-
-                # 2. Send 'SIN/ACK'
-                conn.send("SIN/ACK".encode())
-
-                # 3. Wait for 'ACK'
+            while True:
                 data = conn.recv(1024).decode()
-                if data == "ACK":
-                    print("[SERVER] Handshake successful!")
+                if not data: break
+                buffer += data
 
-                    # (Logic for receiving data will go here later)
+                # 1. Handshake
+                if "SIN" in buffer:
+                    conn.send("SIN/ACK".encode())
+                    buffer = buffer.replace("SIN", "")
 
-                else:
-                    print(f"[SERVER] Error: Expected ACK, got {data}")
-            else:
-                print(f"[SERVER] Error: Expected SIN, got {data}")
+                # 2. Size Negotiation
+                if "SIZE_REQ" in buffer:
+                    conn.send(str(max_msg_size).encode())
+                    buffer = buffer.replace("SIZE_REQ", "")
+
+                # 3. Data Transfer logic
+                if "M" in buffer and ":" in buffer:
+                    if buffer.startswith("M"):
+                        parts = buffer.split(':', 1)
+                        header = parts[0]  # לדוגמה M0
+                        rest = parts[1]  # התוכן
+
+                        # בודקים אם כל התוכן הגיע
+                        if len(rest) >= max_msg_size:
+                            seq_num = int(header[1:])
+
+                            if seq_num == expected_seq:
+                                conn.send(f"ACK{seq_num}".encode())
+                                expected_seq += 1
+                            else:
+                                if expected_seq > 0:
+                                    conn.send(f"ACK{expected_seq - 1}".encode())
+
+                            # ניקוי הבאפר
+                            buffer = buffer[len(header) + 1 + max_msg_size:]
 
         except Exception as e:
-            print(f"[SERVER] Error: {e}")
-
+            print(f"Error: {e}")
         conn.close()
-        print("[SERVER] Connection closed.\n")
 
 
 if __name__ == "__main__":

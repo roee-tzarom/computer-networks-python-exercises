@@ -1,52 +1,58 @@
 import socket
-
-
-def read_config(filename):
-    config = {}
-    try:
-        with open(filename, 'r') as file:
-            for line in file:
-                if ':' in line:
-                    key, value = line.split(':', 1)
-                    config[key.strip()] = value.strip()
-    except FileNotFoundError:
-        print(f"Error: File {filename} not found.")
-    return config
+import time
 
 
 def start_client():
-    config = read_config('input.txt')
     server_ip = '127.0.0.1'
     server_port = 12345
+    window_size = 5
 
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((server_ip, server_port))
 
-    try:
-        client_socket.connect((server_ip, server_port))
+    # Handshake & Setup
+    client_socket.send("SIN".encode())
+    client_socket.recv(1024)
+    client_socket.send("ACK\n".encode())
+    time.sleep(0.5)
 
-        # --- HANDSHAKE START ---
-        # 1. Send 'SIN'
-        print("[CLIENT] Sending SIN...")
-        client_socket.send("SIN".encode())
+    client_socket.send("SIZE_REQ".encode())
+    max_size = int(client_socket.recv(1024).decode())
+    time.sleep(0.5)
 
-        # 2. Receive 'SIN/ACK'
-        data = client_socket.recv(1024).decode()
-        if data == "SIN/ACK":
-            print("[CLIENT] Received SIN/ACK. Sending ACK...")
+    # קריאת הקובץ
+    with open('my_data.txt', 'r') as f:
+        content = f.read()
 
-            # 3. Send 'ACK'
-            client_socket.send("ACK".encode())
-            print("[CLIENT] Handshake successful!")
+    chunks = [content[i:i + max_size] for i in range(0, len(content), max_size)]
+    total = len(chunks)
+    base = 0
+    next_seq = 0
 
-            # (Logic for sending data will go here later)
+    # הלולאה הראשית
+    while base < total:
+        # שליחת הודעות בחלון
+        while next_seq < base + window_size and next_seq < total:
+            msg = f"M{next_seq}:{chunks[next_seq]}"
+            client_socket.send(msg.encode())
+            next_seq += 1
+            time.sleep(0.1)  # השהיה למניעת הדבקה
 
-        else:
-            print(f"[CLIENT] Handshake failed. Received: {data}")
+        # קבלת אישורים
+        try:
+            client_socket.settimeout(2.0)
+            ack = client_socket.recv(1024).decode()
+            if "ACK" in ack:
+                import re
+                nums = re.findall(r'ACK(\d+)', ack)
+                for n in nums:
+                    val = int(n)
+                    if val >= base:
+                        base = val + 1
+        except socket.timeout:
+            next_seq = base
 
-    except Exception as e:
-        print(f"[CLIENT] Error: {e}")
-    finally:
-        client_socket.close()
+    client_socket.close()
 
 
 if __name__ == "__main__":
