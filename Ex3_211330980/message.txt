@@ -1,0 +1,1 @@
+This is a long test message designed to check if the sliding window protocol works correctly. We need enough bytes here to force segmentation.
