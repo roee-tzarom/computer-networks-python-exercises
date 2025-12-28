@@ -1,6 +1,5 @@
 import socket
-import random  # <--- הוספנו את זה
-
+import random
 
 def read_config(filename):
     config = {}
@@ -11,14 +10,19 @@ def read_config(filename):
                     key, value = line.split(':', 1)
                     config[key.strip()] = value.strip()
     except FileNotFoundError:
-        print(f"Error: File {filename} not found.")
+        # כאן הוספנו את התמיכה בקלט ידני במקרה שהקובץ לא נמצא
+        # זה לא סותר את צילום המסך כי זה קורה בתוך ה-except
+        print(f"[SERVER] Config file '{filename}' not found. Please enter values manually:")
+        config['maximum_msg_size'] = input("Enter maximum_msg_size (e.g., 100): ")
+        config['window_size'] = input("Enter window_size (e.g., 5): ")
+        config['dynamic message size'] = input("Enable dynamic message size? (True/False): ")
+        config['drop_prob'] = input("Enter packet drop probability (0.0 - 1.0): ")
     return config
-
 
 def start_server():
     config = read_config('input.txt')
+    # שימוש בערכים מהקונפיגורציה (עם ברירות מחדל למקרה של בעיה)
     max_msg_size = int(config.get('maximum_msg_size', '100'))
-    # --- קריאת ההסתברות לאיבוד (חשוב!) ---
     drop_prob = float(config.get('drop_prob', '0.0'))
 
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -58,14 +62,12 @@ def start_server():
                         rest = parts[1]
 
                         if len(rest) >= max_msg_size:
-                            # === החלק החדש לצלם ===
                             # סימולציה של איבוד חבילה
                             if random.random() < drop_prob:
                                 print(f"[SERVER] DROPPED packet {header} intentionally!")
                                 # מוחקים מהבאפר (כאילו התקבל) אבל לא שולחים ACK
                                 buffer = buffer[len(header) + 1 + max_msg_size:]
                                 continue
-                                # ========================
 
                             seq_num = int(header[1:])
                             if seq_num == expected_seq:
@@ -80,7 +82,6 @@ def start_server():
         except Exception as e:
             print(f"Error: {e}")
         conn.close()
-
 
 if __name__ == "__main__":
     start_server()
