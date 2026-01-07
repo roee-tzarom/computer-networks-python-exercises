@@ -1,24 +1,32 @@
 import socket
 import time
 import re
+import os
 
 
 # הוספנו פונקציית קריאה גם ללקוח כדי לעמוד בדרישות
-def read_config(filename):
+def read_config(filename='input.txt'):
     config = {}
+    # מציאת הנתיב המלא
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    full_path = os.path.join(base_dir, filename)
+
     try:
-        with open(filename, 'r') as file:
+        with open(full_path, 'r') as file:
             for line in file:
                 if ':' in line:
                     key, value = line.split(':', 1)
-                    config[key.strip()] = value.strip()
+                    # === התיקון נמצא כאן ===
+                    # מנקה רווחים ואז מנקה גרשיים אם יש
+                    config[key.strip()] = value.strip().strip('"').strip("'")
+                    # =======================
     except FileNotFoundError:
-        print(f"[CLIENT] Config file '{filename}' not found. Please enter values manually:")
+        print(f"[CLIENT] Config file not found at: {full_path}")
+        print("Please enter values manually:")
         config['message'] = input("Enter file path to send (e.g., my_data.txt): ")
         config['timeout'] = input("Enter timeout in seconds (e.g., 3): ")
         config['window_size'] = input("Enter window_size (e.g., 5): ")
     return config
-
 
 def start_client():
     # טעינת הגדרות

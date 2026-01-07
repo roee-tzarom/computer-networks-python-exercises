@@ -1,22 +1,29 @@
 import socket
 import random
+import os
 
-def read_config(filename):
+
+def read_config(filename='input.txt'):
     config = {}
+    # מציאת הנתיב המלא
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    full_path = os.path.join(base_dir, filename)
+
     try:
-        with open(filename, 'r') as file:
+        with open(full_path, 'r') as file:
             for line in file:
                 if ':' in line:
                     key, value = line.split(':', 1)
-                    config[key.strip()] = value.strip()
+                    # === התיקון נמצא כאן ===
+                    # מנקה רווחים ואז מנקה גרשיים אם יש
+                    config[key.strip()] = value.strip().strip('"').strip("'")
+                    # =======================
     except FileNotFoundError:
-        # כאן הוספנו את התמיכה בקלט ידני במקרה שהקובץ לא נמצא
-        # זה לא סותר את צילום המסך כי זה קורה בתוך ה-except
-        print(f"[SERVER] Config file '{filename}' not found. Please enter values manually:")
-        config['maximum_msg_size'] = input("Enter maximum_msg_size (e.g., 100): ")
+        print(f"[CLIENT] Config file not found at: {full_path}")
+        print("Please enter values manually:")
+        config['message'] = input("Enter file path to send (e.g., my_data.txt): ")
+        config['timeout'] = input("Enter timeout in seconds (e.g., 3): ")
         config['window_size'] = input("Enter window_size (e.g., 5): ")
-        config['dynamic message size'] = input("Enable dynamic message size? (True/False): ")
-        config['drop_prob'] = input("Enter packet drop probability (0.0 - 1.0): ")
     return config
 
 def start_server():
