@@ -6,7 +6,7 @@ import re
 import os  # <--- חובה להוסיף את זה
 
 
-def read_config(filename='input.txt'):
+def read_config(filename='config.txt'):
     config = {}
     # מציאת הנתיב המלא לקובץ כדי למנוע בעיות של "קובץ לא נמצא"
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -24,7 +24,7 @@ def read_config(filename='input.txt'):
     except FileNotFoundError:
         print(f"[CLIENT] Config file not found at: {full_path}")
         print("Please enter values manually:")
-        config['message'] = input("Enter file path to send (e.g., my_data.txt): ")
+        config['message'] = input("Enter file path to send (e.g., sample_payload.txt): ")
         config['timeout'] = input("Enter timeout in seconds (e.g., 3): ")
         config['window_size'] = input("Enter window_size (e.g., 5): ")
     return config
@@ -32,7 +32,7 @@ def read_config(filename='input.txt'):
 
 def start_client():
     # טעינת הגדרות
-    config = read_config('input.txt')
+    config = read_config('config.txt')
 
     server_ip = '127.0.0.1'
     server_port = 12345
@@ -40,7 +40,7 @@ def start_client():
     # המרת הערכים לטיפוסים הנכונים
     window_size = int(config.get('window_size', 5))
     timeout_val = float(config.get('timeout', 2.0))
-    file_path = config.get('message', 'my_data.txt')
+    file_path = config.get('message', 'sample_payload.txt')
 
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
