@@ -1,3 +1,5 @@
+"""Create a deterministic sample payload for the transfer exercise."""
+
 filename = "my_data.txt"
 chunk_size = 100  # הגודל שהוגדר בשרת
 num_chunks = 7  # הורדנו ל-7 (רק a עד g) - מספיק בשביל להדגים הזזה
