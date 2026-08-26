@@ -1,3 +1,5 @@
+"""TCP sender for a configurable sliding-window file-transfer exercise."""
+
 import socket
 import time
 import re
