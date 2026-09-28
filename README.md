@@ -25,3 +25,21 @@ python client.py
 `config.txt` supplies the sample filename, window size, timeout, maximum message size and simulated drop probability. `payload_generator.py` can regenerate `sample_payload.txt` when run from the exercise directory.
 
 This teaches an application-level sliding window; TCP itself already provides reliable ordered delivery. The custom parser assumes fixed-size payload chunks, so the included 700-character sample with `maximum_msg_size:100` is the intended demonstration. It is not a general binary-file transfer protocol.
+
+
+## Protocol walkthrough
+
+The exercise deliberately places message sequencing above a reliable TCP stream. The client reads a local configuration file, negotiates a maximum message size, and tracks the next sequence to send alongside the oldest sequence still awaiting acknowledgement. The server tracks the highest contiguous message received and responds with a cumulative ACK. The configurable drop probability skips application messages to expose the timeout and resend path during a local demonstration.
+
+The message format is human-readable (`M<sequence>:<payload>`), which makes socket traces easier to inspect. The sender's window size controls how many messages can be outstanding. A timeout moves transmission back to the first unacknowledged message. The receiver does not reconstruct an arbitrary file format; the supplied fixed-size sample is the useful test case.
+
+## Files and experiment
+
+| File | Role |
+| --- | --- |
+| `tcp_sliding_window_transfer/client.py` | Configuration, connection, send window and retransmission |
+| `tcp_sliding_window_transfer/server.py` | Handshake, simulated drops and cumulative acknowledgements |
+| `tcp_sliding_window_transfer/config.txt` | Sample runtime settings |
+| `tcp_sliding_window_transfer/payload_generator.py` | Recreates the example text payload |
+
+Try the included configuration first, then increase the drop probability or reduce the timeout to observe additional retries. Start the server before the client. This project explains sliding-window bookkeeping; for transport-level reliability on top of an unreliable datagram service, see the [reliable UDP simulator](https://github.com/roee-tzarom/reliable-udp-network-simulator).
